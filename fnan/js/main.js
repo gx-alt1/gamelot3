@@ -3,7 +3,17 @@ let game;
 let staticNoise;
 
 // Block play on weekdays between 7:30 AM and 2:12 PM Eastern time
+// Change this to whatever code you want
+const BYPASS_CODE = 'Nashpass';
+const BYPASS_KEY = 'Nashpass';
+
+function isBypassActive() {
+    try { return sessionStorage.getItem(BYPASS_KEY) === 'true'; }
+    catch (e) { return false; }
+}
+
 function isBlockedSchoolHours() {
+    if (isBypassActive()) return false;
     const now = new Date();
 
     // Get Eastern time parts regardless of the visitor's local timezone
@@ -48,8 +58,42 @@ function showSchoolHoursBlock() {
     document.head.appendChild(style);
     const div = document.createElement('div');
     div.id = 'block-msg';
-    div.textContent = "This game can't be played during school hours (weekdays, 7:30 AM–2:12 PM Eastern).";
+    const msg = document.createElement('div');
+    msg.textContent = "This game can't be played during school hours (weekdays, 7:30 AM–2:12 PM Eastern).";
+    div.appendChild(msg);
+
+    // Bypass code entry
+    const form = document.createElement('div');
+    form.style.cssText = 'margin-top:28px;display:flex;gap:8px;justify-content:center;';
+    const input = document.createElement('input');
+    input.type = 'password';
+    input.placeholder = 'Enter code';
+    input.autocomplete = 'off';
+    input.style.cssText = 'background:#111;color:#ff3b3b;border:1px solid #ff3b3b;padding:8px 10px;font-family:monospace;outline:none;';
+    const btn = document.createElement('button');
+    btn.textContent = 'Enter';
+    btn.style.cssText = 'background:#ff3b3b;color:#000;border:none;padding:8px 14px;font-family:monospace;cursor:pointer;';
+    const err = document.createElement('div');
+    err.style.cssText = 'margin-top:10px;font-size:0.9rem;min-height:1.2em;';
+
+    const submit = () => {
+        if (input.value === BYPASS_CODE) {
+            try { sessionStorage.setItem(BYPASS_KEY, 'true'); } catch (e) {}
+            location.reload();
+        } else {
+            err.textContent = 'Incorrect code.';
+            input.value = '';
+        }
+    };
+    btn.addEventListener('click', submit);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+
+    form.appendChild(input);
+    form.appendChild(btn);
+    div.appendChild(form);
+    div.appendChild(err);
     document.body.appendChild(div);
+    input.focus();
 }
 
 if (isBlockedSchoolHours()) {
